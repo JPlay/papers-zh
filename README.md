@@ -1,4 +1,4 @@
-# papers-zh · 私人文库 · 中文听读
+# papers-zh · 中文听读文库
 
 在线阅读：<https://jplay.github.io/papers-zh/>
 

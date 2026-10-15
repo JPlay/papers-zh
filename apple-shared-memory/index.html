@@ -1,0 +1,253 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<link rel="icon" href="cover.png"><link rel="apple-touch-icon" href="cover.png"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Apple 论文导读：面向 agentic LLM 系统的共享、选择性、持久化记忆</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1f2328;--mut:#6a737d;--card:#fff;--bd:#e3e1dc;--ac:#c2410c;--hl:#fff3c4;--fs:17.5px}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#15171a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1e2125;--bd:#33373d;--ac:#fb923c;--hl:#3a3320}}
+:root[data-theme=dark]{--bg:#15171a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1e2125;--bd:#33373d;--ac:#fb923c;--hl:#3a3320}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:var(--fs)/1.8 -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px 18px 90px}
+#prog{position:fixed;top:0;left:0;height:3px;background:var(--ac);width:0;z-index:20}
+.bar{position:sticky;top:0;z-index:10;display:flex;gap:6px;justify-content:flex-end;padding:8px 0;background:var(--bg)}
+button{font:inherit;font-size:15px;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 18px;margin:12px 0}
+h1{font-size:1.35em;line-height:1.4;margin:0 0 4px}.orig{color:var(--mut);font-size:.88em;margin:0 0 10px}
+.meta{font-size:.85em;color:var(--mut)}a{color:var(--ac)}
+h2{font-size:1.15em;margin:1.6em 0 .4em;border-left:4px solid var(--ac);padding-left:10px}
+p,li,h2,h3,h4{overflow-wrap:anywhere}p{margin:.6em 0}.rd{cursor:pointer;border-radius:6px;transition:background .2s}
+.rd.on{background:var(--hl);outline:2px solid var(--hl)}
+details summary{cursor:pointer;font-weight:600}details ol{padding-left:1.2em;font-size:.92em}
+.box h3{margin:.2em 0;font-size:1em}.box ul{padding-left:1.2em;margin:.3em 0}
+#fab{position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;width:44px;height:44px}
+#fab #bplay{width:44px;height:44px;border-radius:50%;padding:0;font-size:17px;background:rgba(127,127,127,.28);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(127,127,127,.35);color:var(--fg);position:relative;z-index:2}
+#ring{position:absolute;inset:-3px;width:50px;height:50px;pointer-events:none;z-index:3;display:none}#ring.on{display:block;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#tg{position:absolute;left:-22px;top:12px;width:20px;height:20px;padding:0;border-radius:50%;font-size:10px;line-height:18px;background:rgba(127,127,127,.22);border:none;color:var(--fg)}
+#mini{position:absolute;right:0;bottom:52px;display:none;gap:4px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.15);white-space:nowrap}
+#mini.open{display:flex}#mini button{font-size:13px;padding:4px 7px}#st{position:absolute;right:52px;bottom:12px;font-size:11px;color:var(--mut);white-space:nowrap;background:var(--bg);opacity:.85;border-radius:6px;padding:1px 5px;pointer-events:none}#mini.open~#st{bottom:92px}
+#chap{position:absolute;right:0;bottom:96px;display:none;flex-direction:column;gap:3px;max-height:60vh;overflow-y:auto;width:min(82vw,330px);background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px;box-shadow:0 2px 12px rgba(0,0,0,.2)}#chap.open{display:flex}#chap button{text-align:left;font-size:13.5px;padding:7px 9px;border:none;white-space:normal}#chap button.cur{color:var(--ac);font-weight:700;background:rgba(127,127,127,.12)}
+h3{font-size:1.05em;margin:1.3em 0 .3em}h4{font-size:1em;margin:1em 0 .2em}.h5{font-weight:700}
+h2 .n,h3 .n,h4 .n{color:var(--ac);margin-right:.35em}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:rgba(127,127,127,.13);border-radius:4px;padding:0 .25em;word-break:break-all}
+pre{max-width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;overflow-x:auto;font-size:12.5px;line-height:1.55;margin:.4em 0}pre code{background:none;padding:0;font-size:inherit;word-break:normal;white-space:pre}
+sup{font-size:.68em;line-height:0}sup a{text-decoration:none}.cite{color:var(--mut)}
+ul.l{padding-left:1.3em;margin:.4em 0}ul.l li{margin:.3em 0}
+figure{max-width:100%;min-width:0;overflow:hidden;margin:1em 0;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+figcaption{font-size:.9em;margin:.2em 0 .5em}figcaption b{color:var(--ac)}
+.tw{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;font-size:12.5px;line-height:1.45;min-width:100%}
+th,td{border:1px solid var(--bd);padding:4px 6px;vertical-align:top;text-align:left}th{background:rgba(127,127,127,.12);font-weight:600}
+.svg svg{width:100%;height:auto;background:#fff;border-radius:6px}
+.fnl{font-size:.86em;color:var(--mut);border-top:1px dashed var(--bd);margin-top:.8em;padding-top:.3em}.fnl p{margin:.3em 0}
+.nr{font-size:.8em;color:var(--mut)}
+#toc ol{padding-left:1.1em;margin:.3em 0}#toc li{margin:.15em 0}#toc ol ol{font-size:.92em}#toc a{text-decoration:none}
+#tocp{position:fixed;inset:0;z-index:40;display:none;background:rgba(0,0,0,.35)}#tocp.open{display:block}
+#tocp .in{position:absolute;top:0;bottom:0;left:0;width:min(86vw,380px);overflow-y:auto;background:var(--bg);padding:14px 16px 40px;border-right:1px solid var(--bd)}
+.bib li{margin:.25em 0;word-break:break-all}
+.back{display:inline-block;font-size:.9em;text-decoration:none;margin:2px 0 4px}.note{background:rgba(127,127,127,.08);border-left:3px solid var(--bd);padding:6px 10px}h2 .nr,h3 .nr{font-weight:400;margin-left:.4em}
+.att{font-size:.82em;color:var(--mut);background:rgba(127,127,127,.08);border-radius:8px;padding:8px 10px;margin-top:10px}
+</style></head><body>
+<div id="prog"></div><main>
+<div class="bar"><a class="back" href="../index.html" style="margin-right:auto">← 文库目录</a><button id="tb" aria-label="目录">☰ 目录</button><button id="am" aria-label="缩小字号">A-</button><button id="ap" aria-label="放大字号">A+</button><button id="th" aria-label="切换主题">◐</button></div><div class="card"><h1 class="rd">Apple 论文导读：面向 agentic LLM 系统的共享、选择性、持久化记忆</h1><p class="orig">原题：Shared Selective Persistent Memory for Agentic LLM Systems</p><div class="meta">作者/机构：Sanjana Pedada, Aditya Dhavala, Neelraj Patil（Apple Inc.）<br>发布日期：v1 2026-07-10 · v2 2026-09-15 · 来源：arXiv:2607.09493v2 [cs.AI]<br>原文链接：<a href="https://arxiv.org/html/2607.09493v2">https://arxiv.org/html/2607.09493v2</a> · 摘要页：<a href="https://arxiv.org/abs/2607.09493v2">https://arxiv.org/abs/2607.09493v2</a><br>版权/许可：arXiv 非独占分发许可（arXiv.org perpetual, non-exclusive license 1.0）；未授予翻译或改编权</div><div class="att"><b>中文导读，非翻译；仅供个人学习交流。</b>本页由 JPlay Wang 的助理（Grok Bot）用中文自行组织撰写，按原文章节顺序梳理其论点、方法、数据与局限，只在必要处引用极短的英文原句并以引号标出；不构成原文的翻译或逐句改写，表格与代码以文字说明代替，内容以英文原文为准。版权归原作者/机构所有，请勿公开传播。专有名词与技术术语保留英文。</div></div><details class="card" id="dl"><summary>🎧 离线收听 / 下载音频（13 节，共 36:41）</summary><p style="margin:.5em 0"><a href="apple-shared-memory.mp3" download><b>下载整篇音频（单个 MP3，12.6 MB）</b></a></p><p class="meta" style="margin:.3em 0">可导入任意音乐/播客 App 离线播放；下面是逐节音轨。</p><ol style="font-size:.9em;padding-left:1.3em"><li><a href="audio/s00-4eefe8.mp3" download>摘要：先抓住三个结论</a> <span class="meta">2:55 · 1.0 MB</span></li><li><a href="audio/s01-4241fc.mp3" download>第一节 引言：无状态为什么是浪费</a> <span class="meta">3:35 · 1.2 MB</span></li><li><a href="audio/s02-b7d5df.mp3" download>第二节 相关工作：本文的位置</a> <span class="meta">2:12 · 0.8 MB</span></li><li><a href="audio/s03-3d1096.mp3" download>第三节 架构本体</a> <span class="meta">4:10 · 1.4 MB</span></li><li><a href="audio/s04-b6bff7.mp3" download>第四节 协作式记忆共享</a> <span class="meta">1:03 · 0.4 MB</span></li><li><a href="audio/s05-7d4760.mp3" download>第五节 实现</a> <span class="meta">1:39 · 0.6 MB</span></li><li><a href="audio/s06-7e3240.mp3" download>第六节 评估</a> <span class="meta">12:55 · 4.4 MB</span></li><li><a href="audio/s07-c7c106.mp3" download>第七节 讨论与结论</a> <span class="meta">2:06 · 0.7 MB</span></li><li><a href="audio/s08-8cc2f4.mp3" download>局限性</a> <span class="meta">2:16 · 0.8 MB</span></li><li><a href="audio/s09-2d05f6.mp3" download>伦理考量</a> <span class="meta">0:49 · 0.3 MB</span></li><li><a href="audio/s10-a9a7d2.mp3" download>致谢</a> <span class="meta">0:17 · 0.1 MB</span></li><li><a href="audio/s11-c36da9.mp3" download>附录 A 记忆组装示例</a> <span class="meta">1:19 · 0.5 MB</span></li><li><a href="audio/s12-348733.mp3" download>附录 B 补充表格与图</a> <span class="meta">1:25 · 0.5 MB</span></li></ol></details><details class="card" id="toc" open><summary>目录</summary><ol><li><a href="#abstract1">摘要：先抓住三个结论</a></li><li><a href="#S1">第一节　引言：无状态为什么是浪费</a><ol><li><a href="#S1_SS1">1.1　三个驱动场景</a></li></ol></li><li><a href="#S2">第二节　相关工作：本文的位置</a><ol><li><a href="#S2_SS0_SSS0_Px1">LLM 系统中的记忆</a></li><li><a href="#S2_SS0_SSS0_Px2">结构化记忆与上下文压缩</a></li><li><a href="#S2_SS0_SSS0_Px3">Agentic LLM 框架</a></li><li><a href="#S2_SS0_SSS0_Px4">工具增强的 LLM</a></li></ol></li><li><a href="#S3">第三节　架构本体</a><ol><li><a href="#S3_SS1">3.1　问题形式化</a></li><li><a href="#S3_SS2">3.2　四类记忆</a></li><li><a href="#S3_SS3">3.3　选择性遗忘</a></li><li><a href="#S3_SS4">3.4　session 开始时的组装</a></li><li><a href="#S3_SS5">3.5　零 token 数据刷新</a></li></ol></li><li><a href="#S4">第四节　协作式记忆共享</a></li><li><a href="#S5">第五节　实现</a><ol><li><a href="#S5_SS0_SSS0_Px1">Agent 循环</a></li><li><a href="#S5_SS0_SSS0_Px2">数据集成</a></li><li><a href="#S5_SS0_SSS0_Px3">持久化与版本管理</a></li><li><a href="#S5_SS0_SSS0_Px4">保存与回退</a></li></ol></li><li><a href="#S6">第六节　评估</a><ol><li><a href="#S6_SS1">6.1　实验设置</a></li><li><a href="#S6_SS2">6.2　实验一：记忆条件消融</a></li><li><a href="#S6_SS3">6.3　实验二：公开数据集复现</a></li><li><a href="#S6_SS4">6.4　实验三：token 效率</a></li><li><a href="#S6_SS5">6.5　实验四：用户研究</a></li><li><a href="#S6_SS6">6.6　发现汇总</a></li></ol></li><li><a href="#S7">第七节　讨论与结论</a></li><li><a href="#Sx1">局限性</a><ol><li><a href="#Sx1_SS0_SSS0_Px1">证据层面的局限</a></li><li><a href="#Sx1_SS0_SSS0_Px2">未来工作</a></li></ol></li><li><a href="#Sx2">伦理考量</a></li><li><a href="#Sx3">致谢</a></li><li><a href="#A1">附录 A　记忆组装示例</a></li><li><a href="#A2">附录 B　补充表格与图</a></li></ol></details>
+<p class="rd">这是 arXiv 论文《Shared Selective Persistent Memory for Agentic LLM Systems》第二版的中文导读，不是翻译，仅供个人学习交流。导读按原文章节顺序展开，用自己的话梳理论点、方法、数字和局限；表格改用文字说明，代码不朗读。</p>
+<h2 class="rd" id="abstract1">摘要：先抓住三个结论<span class="nr">Abstract · <a href="https://arxiv.org/html/2607.09493v2#abstract1" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">问题：靠多轮工具调用生成代码的 agentic LLM 系统，每个 session 都从零开始，上次让工作顺利的领域约束、数据 schema、工具配置和输出偏好，结束后全部丢失。</p>
+<p class="rd">方案：shared selective persistent memory，即“共享、有选择、持久化”的记忆。只保留四类可复用上下文：任务规格、数据 schema、工具配置、输出约束；session 自己的推理轨迹一律丢弃。保留下来的内容打包成 workspace，可在基于角色的访问控制下转交给其他用户。</p>
+<p class="rd">摘要中值得先记住三个结论。</p>
+<ul class="l">
+<li class="rd">成本曲线是非单调的。四个公开数据集上的受控复现里，格式规格只在开头给一次，之后不再提供。无记忆十二次全败，输入约 3.8K token；选择性记忆十二次全中，输入约 3.9K；完整对话历史成功八次，输入约 7.7K。作者的口号是“What is kept matters more than how much is kept”：保留什么，比保留多少更重要。</li>
+<li class="rd">统计上，两种记忆相对无记忆的差异都通过 Bonferroni 校正后的精确 McNemar 检验，p 分别为 0.0005 和 0.008；两种记忆之间完成率分不出高下（p 等于 0.125），区别在价格。无记忆的失败全是规格未满足，产出物结构本身完好。</li>
+<li class="rd">系统已在实际平台上部署：agent 从 CSV、SQL、REST、MCP 数据源生成用 git 管理版本的产出物。“零 token 数据刷新”把程序和数据拆开，十二次全部触发、中位 0.08 秒、不调用模型；用统计摘要代替原始数据，token 少 97 到 431 倍。在 24 个企业任务上，选择性记忆完成 23 个，另两种是 19 和 17 个，但样本太小，两两差异都不显著；那里用户会重新说明需求，完整历史多花 9 倍输入也毫无改进。</li>
+</ul>
+<h2 class="rd" id="S1">第一节　引言：无状态为什么是浪费<span class="nr">Introduction · <a href="https://arxiv.org/html/2607.09493v2#S1" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">作者的出发点很朴素：agent 已经很能干，但 session 是无状态的（原文“stateless”）。企业用户反复做结构相似的工作，比如每周用新数据重做仪表盘、按固定格式出报告，每次都要把系统“本该记得”的东西再讲一遍。症结不在 LLM 没有记忆，而在于系统没有机制去“留下有用的、扔掉一次性的”。</p>
+<p class="rd">把整段对话存下来行不行？作者的答案是能用但不划算：公开数据上它把完成数从零提到八，但输入是紧凑规格的两倍，而后者能十二次全中；企业任务上则多花 9 倍输入、毫无改进。作者猜想旧的工具轨迹可能还会误导模型，但承认实验证明的是成本，不是这个机制。</p>
+<p class="rd">核心观察是：可复用的知识能拆成四个正交类别，各自紧凑、跨 session 稳定、存下来有益。</p>
+<ul class="l">
+<li class="rd">任务规格：用户自定义的 system prompt，写领域规则、格式和偏好，例如达成率不低于百分之九十五用绿色。</li>
+<li class="rd">数据 schema：预先算好的列名、类型、统计摘要和数据源之间的关系。</li>
+<li class="rd">工具配置：可用工具、参数 schema、调用方式和认证要求。</li>
+<li class="rd">输出约束：产出物与运行环境之间的契约，例如数据运行时注入、绝不写死。</li>
+</ul>
+<p class="rd">丢弃的是推理轨迹、工具调用日志、中间文件和出错恢复路径。作者措辞克制：证据说明这些“不值这个价”，并不说明它们有害。</p>
+<p class="rd">三项贡献：一是这套记忆架构加零 token 刷新机制，见第三节；二是协作式 workspace 平台，有 git 版本化、草稿隔离、多连接器和 AI 辅助的编辑与查询模式，见第四节；三是三个企业场景的部署案例，见第六节。</p>
+<p class="rd">导读者注：读这篇论文，可以抓住一条主线。作者并不声称模型因此变聪明了，而是论证两件事：一是只保留“对下一次有用的结构化信息”，比保留全部过程更便宜，在需要时也更可靠；二是让程序和数据分离，很多更新根本不用再叫醒模型。后面所有实验，都是围绕这两点展开的。</p>
+<h3 class="rd" id="S1_SS1">1.1　三个驱动场景<span class="nr">Motivating Use Cases · <a href="https://arxiv.org/html/2607.09493v2#S1.SS1" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">后面的任务都按这三类组织：</p>
+<ul class="l">
+<li class="rd">周期性刷新：分析师每周重做供应链仪表盘，每次四到五轮、重复交代八到十二条格式约束；有了记忆，约束自动保留，换数据即可零 token 刷新。</li>
+<li class="rd">跨团队共享：总监把营收 workspace 发布成带版本的模板，同事加载后接上 schema 兼容的自家数据，在权限控制下直接看到结果。</li>
+<li class="rd">迭代式构建：团队跨多个 session 扩充同一个 workspace，规格一路累积，草稿隔离保护已发布版本，git 回退可恢复任意历史状态而无需调用模型。</li>
+</ul>
+<h2 class="rd" id="S2">第二节　相关工作：本文的位置<span class="nr">Related Work · <a href="https://arxiv.org/html/2607.09493v2#S2" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">四条线归结到同一个区别：别人要么存得太多太粗，要么不跨 session 存配置。</p>
+<h3 class="rd" id="S2_SS0_SSS0_Px1">LLM 系统中的记忆<span class="nr">Memory in LLM Systems · <a href="https://arxiv.org/html/2607.09493v2#S2.SS0.SSS0.Px1" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">加长上下文窗口只加预算、不决定存什么；RAG 在文档粒度检索，不是结构化配置；对话摘要仍带着推理轨迹；MemGPT 关注对话连续性，Generative Agents 关注叙事连贯，Reflexion 只在单个任务内总结失败。本文则规定四类信息跨 session 保存，并主动丢弃轨迹。</p>
+<h3 class="rd" id="S2_SS0_SSS0_Px2">结构化记忆与上下文压缩<span class="nr">Structured Memory and Context Compression · <a href="https://arxiv.org/html/2607.09493v2#S2.SS0.SSS0.Px2" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">A-MEM 的笔记网络、Mem0 的长期事实库、LangGraph 区分 thread 内 checkpointer 与跨 thread store，都把记忆做成结构化记录，其中 LangGraph 和本文的 session、workspace 划分最接近。差别是它们“学习”该存什么，本文的类别事先固定、与产出物契约绑定，不够通用但能直接落地。相比给每段内容打分的上下文压缩方法，本文的遗忘是粗粒度、声明式的，整类丢弃。</p>
+<h3 class="rd" id="S2_SS0_SSS0_Px3">Agentic LLM 框架<span class="nr">Agentic LLM Frameworks · <a href="https://arxiv.org/html/2607.09493v2#S2.SS0.SSS0.Px3" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">ReAct、chain-of-thought、LangChain、AutoGen、CrewAI、LATS 解决的是推理与编排。最接近的是 Voyager 的持久技能库，但它存可执行技能，不是声明式配置。这些框架都不跨 session 保存任务规格、工具配置或输出约束。</p>
+<h3 class="rd" id="S2_SS0_SSS0_Px4">工具增强的 LLM<span class="nr">Tool-Augmented LLMs · <a href="https://arxiv.org/html/2607.09493v2#S2.SS0.SSS0.Px4" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">Toolformer、Gorilla、MCP 解决工具学习、调用准确率和工具发现。OpenAI Assistants API 有 thread 级持久化，但存的是整段对话。代码生成工具和代码解释器是单用户、用完即弃的；传统 BI 平台能持久保存仪表盘，却需要专用查询语言。</p>
+<h2 class="rd" id="S3">第三节　架构本体<span class="nr">Shared Selective Persistent Memory · <a href="https://arxiv.org/html/2607.09493v2#S3" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">整体流程：用户在对话式前端操作；每个 session 开始时从 workspace 取出选择性记忆；agentic 引擎靠工具调用生成和编辑带版本的产出物，外部数据经多连接器层接入；产出物只能经运行时注入契约读数据；workspace 只记录四类记忆，从不记录轨迹。</p>
+<p class="rd note">【图一说明】图一是架构图：多个用户各有 workspace，可在权限控制下共享；每个 workspace 保存四类记忆；引擎把记忆组装进 prompt；零 token 数据架构让产出物与数据解耦；数据经多种连接器接入。<span class="nr"> <a href="https://arxiv.org/html/2607.09493v2#S3.F1" target="_blank" rel="noopener">原文对应位置 ↗</a></span></p>
+<h3 class="rd" id="S3_SS1">3.1　问题形式化<span class="nr">Problem Formulation · <a href="https://arxiv.org/html/2607.09493v2#S3.SS1" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">用符号说：查询 q、system prompt s、工具步骤序列 T、产出物 a，现有系统在 session 结束后整体丢掉。用户回来做相关任务时，s 里的领域约束、q 里的 schema 假设、T 里的工具配置、a 里的格式契约都得重新交代。作者认为这既是用户摩擦的主因，也是 token 浪费的主因。</p>
+<h3 class="rd" id="S3_SS2">3.2　四类记忆<span class="nr">Memory Decomposition · <a href="https://arxiv.org/html/2607.09493v2#S3.SS2" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<ul class="l">
+<li class="rd">任务规格：对基础 prompt 的扩展，由用户编写、多次打磨。例子包括按环节配色，Supply 蓝、Orders 橙、Process 紫；总要有执行摘要卡片；数值运算防 NaN。</li>
+<li class="rd">数据 schema：列名类型、数值分布、类别取值、行数和样例行，用 pandas 的 describe 加类别分析自动生成。作者特意澄清：画像要读整张表，计算成本随行数增长；有界的只是输出摘要，而且只对行数近似恒定，对列数线性增长，见表三。它让模型不看原始数据也能写对处理代码。</li>
+<li class="rd">工具配置：工具与连接器、参数 schema、调用方式，如 REST 端点、MCP 服务器、SQL 连接、子 agent 委派，以及认证。企业里这些很稳定，但从头配置很贵。</li>
+<li class="rd">输出约束：最关键的是数据注入契约，脚本只能从运行时注入点读数据，绝不写死，这是零 token 刷新的前提。</li>
+</ul>
+<h3 class="rd" id="S3_SS3">3.3　选择性遗忘<span class="nr">Selective Forgetting · <a href="https://arxiv.org/html/2607.09493v2#S3.SS3" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">明确不存六样东西：临时中间文件；用户试过但没保存的改动，撤销栈让试错无风险；推理轨迹；工具调用日志；出错恢复路径；原始数据，由 schema 摘要替代。作者说动机只是“松散地”来自 lost in the middle 研究，但论点关于内容而非位置：旧轨迹可能让 agent 重走老路。</p>
+<p class="rd">导读者注：此处说“可能误导”，引言和局限部分则强调只证明了“不划算”。两处强弱不一，宜以较克制的表述为准。</p>
+<h3 class="rd" id="S3_SS4">3.4　session 开始时的组装<span class="nr">Memory Composition at Session Start · <a href="https://arxiv.org/html/2607.09493v2#S3.SS4" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">两个公式，用文字说：system prompt 等于基础 prompt 依次拼上任务规格、工具配置、输出约束，各带小节标题；数据 schema 则附在用户查询后面。组装在应用层完成，模型不知道有持久化机制。</p>
+<h3 class="rd" id="S3_SS5">3.5　零 token 数据刷新<span class="nr">Zero-Token Data Refresh · <a href="https://arxiv.org/html/2607.09493v2#S3.SS5" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">模型生成的程序在运行时解析、聚合、渲染，连摘要、异常值、排名这类洞察文字也动态计算，所以数据变了无需再调模型。新数据到来时做兼容检查：旧列集合必须是新列集合的子集；兼容就零 token 刷新，否则提示重新生成。因此 schema 只能“加列”，缺列就得重来。</p>
+<h2 class="rd" id="S4">第四节　协作式记忆共享<span class="nr">Collaborative Memory Sharing · <a href="https://arxiv.org/html/2607.09493v2#S4" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">workspace 定义为六元组：四类记忆、最新产出物 a、版本历史 V。它存配置、代码和版本元数据，不存对话、轨迹或日志，作者称之为“a curated artifact store, not a chat history”。</p>
+<p class="rd">共享分四步：加载，记忆进入同事的 session，草稿隔离保护已发布版本；换数据，接上自己的 SQL、REST 或 CSV，兼容则零 token 渲染；细化，比如“加一张趋势图”，无需重新交代；查询，没有编辑权的人用 AI 查询模式提问。</p>
+<p class="rd">权限基于 OIDC，三种角色：owner 完全控制；steward 可编辑产出物和任务规格；viewer 可加载、查询、接入自己的数据，但不能改基础 workspace。</p>
+<h2 class="rd" id="S5">第五节　实现<span class="nr">Implementation · <a href="https://arxiv.org/html/2607.09493v2#S5" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">平台由 FastAPI 后端、agentic LLM 引擎、多连接器数据层和对话式前端组成。</p>
+<h3 class="rd" id="S5_SS0_SSS0_Px1">Agent 循环<span class="nr">Agentic Loop · <a href="https://arxiv.org/html/2607.09493v2#S5.SS0.SSS0.Px1" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">每轮用户输入都新开 session，带上组装好的 prompt 和数据摘要。agent 用 Claude Opus 4，经 Claude Agent SDK 调用文件读写、代码搜索和 shell 等工具，范围限于该用户的工作区。分编辑模式和只读的查询模式。</p>
+<h3 class="rd" id="S5_SS0_SSS0_Px2">数据集成<span class="nr">Data Integration · <a href="https://arxiv.org/html/2607.09493v2#S5.SS0.SSS0.Px2" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">统一接口把 CSV、SQL、REST，以及走 JSON-RPC 和 mTLS 的 MCP 服务器，规范成表格。不注入原始数据，而是预算统计画像，典型企业表约 500 token，比原始注入少约 100 倍；表越宽画像越大。</p>
+<h3 class="rd" id="S5_SS0_SSS0_Px3">持久化与版本管理<span class="nr">Persistence and Versioning · <a href="https://arxiv.org/html/2607.09493v2#S5.SS0.SSS0.Px3" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">四类记忆、访问控制列表和数据源配置存在 MongoDB；产出物和版本历史交给 git，支持 diff、分支、回滚。两层都不存对话或轨迹。编辑在隔离草稿中进行，“发布”时才生成新的 git 快照。</p>
+<h3 class="rd" id="S5_SS0_SSS0_Px4">保存与回退<span class="nr">Save and Revert · <a href="https://arxiv.org/html/2607.09493v2#S5.SS0.SSS0.Px4" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">会话内撤销栈最多十个快照，可退回任意版本且不调用模型；只有明确保存的改动才留下，这本身就是选择性遗忘。</p>
+<h2 class="rd" id="S6">第六节　评估<span class="nr">Evaluation · <a href="https://arxiv.org/html/2607.09493v2#S6" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">四项研究：记忆条件消融、公开数据集复现、token 效率分析、用户研究。</p>
+<p class="rd">导读者注：这一节建议带着三个问题去听。第一，比较的是哪三种条件，各自给模型带了什么；第二，每个数字背后是一次运行，还是平均值，有没有显著性；第三，作者自己指出了哪些混杂因素。第二版的一个明显特点是，作者对统计结论做了大量收敛，很多原先看似漂亮的差异，都被明确降级为“描述性”或“观察到但未确立”。</p>
+<h3 class="rd" id="S6_SS1">6.1　实验设置<span class="nr">Experimental Setup · <a href="https://arxiv.org/html/2607.09493v2#S6.SS1" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">主力生成用 Claude Opus 4，文中给的标识是 claude-opus-4-6；轻量子任务用 Claude Sonnet 4；默认采样。注意每个格子只跑一次，不报方差。语料是 24 份真实企业数据文件，涵盖供应链、销售和流程指标，从 200 行 8 列到 45K 行 42 列，经 CSV 和 SQL 接入。</p>
+<p class="rd">导读者注：正文把模型称为 Claude Opus 4，但给出的标识写作 claude-opus-4-6，两者的版本号写法不一致，原文没有解释，这里按原样转述。</p>
+<p class="rd">一份文件对应一个任务，要求生成带格式要求的交互式产出物。任务由作者编写，取材于内部用户的真实需求，并非独立标注者所写，作者列为局限。三类场景分别有 10、8、6 个任务。任务类型分初次生成和周期性生成。</p>
+<h3 class="rd" id="S6_SS2">6.2　实验一：记忆条件消融<span class="nr">Experiment 1: Memory Condition Ablation · <a href="https://arxiv.org/html/2607.09493v2#S6.SS2" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">24 个周期性任务，三种条件：无记忆，用户完整重新说明；完整历史，注入上次全部记录；选择性记忆，四类记忆加产出物。</p>
+<p class="rd">评审：两名不参与项目、非作者的业务同事，按渲染正确、数据忠实、格式合规、内容完整四条打分，两人四条全过才算通过，一致性 kappa 为 0.91；盲评，随机顺序，看不到条件、记录和 token 数。但作者指出，只有部分条件带格式规格，评审员可能从格式推测条件。</p>
+<p class="rd note">【表一说明】表一按无记忆、完整历史、选择性的顺序给均值：输入 token 约 2.1K、18.7K、3.4K；输出约 8.2K、9.6K、4.1K；轮数 4.3、3.1、1.4；完成率百分之七十九、百分之七十一、百分之九十六；耗时 285、310、68 秒。也就是说，选择性记忆完成最多、最省，完整历史输入约 9 倍却完成更少。<span class="nr"> <a href="https://arxiv.org/html/2607.09493v2#S6.T1" target="_blank" rel="noopener">原文对应位置 ↗</a></span></p>
+<p class="rd">完成数分别是 23、19、17。分场景：周期性刷新 10 个任务中依次完成 10、7、6；跨团队 8 个中依次 8、7、6；迭代构建 6 个中三者都完成 5 个，但选择性记忆把轮数从 6.2 降到 2.8。</p>
+<p class="rd">重要混杂：选择性一列里，18 个任务走了零 token 刷新、完全没调模型，只有 6 个带记忆调用模型。所以该列 token 和耗时是两条路径的平均，不是单次调用成本；完成率不受影响。逐任务记录没保留，作者只能报告混杂，无法拆分。</p>
+<p class="rd">显著性：这是配对设计，应用 McNemar 而非 Fisher 检验，但没保留任务级配对，只能在与边际数 23、19、17 相容的所有配对中给范围。最有利时，选择性对无记忆 p 为 0.125，对完整历史 0.031；最不利时分别为 0.219 和 0.070。Bonferroni 校正后门槛为 0.0167，任何配对下都不显著。作者因此只把它当描述性结果：三类场景方向一致，但 24 个任务证明不了。</p>
+<p class="rd">失败分析：选择性记忆唯一的失败需要跨两个文件 join，而数据 schema 对每个源单独画像、不记录跨源键关系，作者称这是“schema 摘要当记忆”的结构性缺陷。无记忆的 5 次失败全是格式不合规。完整历史的 7 次失败多是照搬旧解法、没回应当前请求，但未按预登记方案标注，只算观察。</p>
+<h3 class="rd" id="S6_SS3">6.3　实验二：公开数据集复现<span class="nr">Experiment 2: Public Dataset Replication · <a href="https://arxiv.org/html/2607.09493v2#S6.SS3" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">为便于他人复现，换用四个宽度差异很大的公开数据集：World Bank GDP，13,979 行 4 列；UCI Adult Income，32,561 行 15 列；Global Superstore，公开的 1,000 行样本，24 列；NYC 311，5,000 行 44 列。脚注列明来源，并称试验级结果随产出物发布。</p>
+<p class="rd">先注意：两张表里的“无记忆”不可比。企业实验中用户会重新说明，所以无记忆也有百分之七十九；这里规格在第二阶段被扣下，不带规格就必败。前者测记忆省多少轮，后者测没记忆能否完成。</p>
+<p class="rd">协议：第一阶段各条件相同，用 V1 数据加完整 prompt 和格式规格生成产出物。第二阶段统一只说“用更新后的数据重新生成”，数据换成 V2，列相同、行打乱、数值扰动正负百分之十五，规格不重复。条件只差在带什么进入第二阶段：什么都不带、第一阶段完整记录含产出物、或任务规格。每个数据集每种条件三次，共 36 次试验、72 次模型调用。完成要求全部校验通过：能渲染、守注入契约、不写死数据、有解析器、列引用正确，外加规格合规，即规格指定了一个任何 prompt 都没出现过的背景色。真正有区分力的只有这最后一条。</p>
+<p class="rd note">【表二说明】表二按无记忆、完整历史、选择性的顺序：完成数和规格合规数都是十二次中的零、八、十二次；输入约 3.8K、7.7K、3.9K；输出约 5.5K、3.5K、4.3K；耗时中位数 130、99、140 秒，因两次试验超过 600 秒而用中位数；工具调用 3.7、3.6、10.1 次。核心对比是：选择性与无记忆输入几乎一样，一个全中、一个全败。<span class="nr"> <a href="https://arxiv.org/html/2607.09493v2#S6.T2" target="_blank" rel="noopener">原文对应位置 ↗</a></span></p>
+<p class="rd">分数据集同样整齐：无记忆每个都是三败，选择性每个都三胜，完整历史在一到三次之间。无记忆的产出物八条标准过七条，只差规格。</p>
+<p class="rd">导读者注：这里的“八条标准”和前面列出的检查项数目对不上。正文列出的是五项结构性检查加一项规格合规，共六项，但这里说八条过七条。原文没有交代另外两条是什么，读者宜知道这一点。</p>
+<p class="rd">作者提醒，这里检验的是整个 workspace：选择性条件同时带着规格和旧产出物，约束靠哪一个传递分不开；它耗时和工具调用更多，也是因为在改旧产出物而非重写。</p>
+<p class="rd">更有力的是成本：输入加输出，选择性约 8.2K，无记忆 9.3K，完整历史 11.2K。全中的方案反而比全败的便宜，因为后者花了 5.5K 输出去生成不合格的东西。完整历史能带上规格，但贵一倍、不稳定：4 次失败都是根本没有产出，分布在三个数据集，且记录长度无法预测失败，最短的反而失败。所以作者称之为注入记录后的不稳定，而不是被旧轨迹锚定，后者应表现为产出不合规。</p>
+<p class="rd">显著性：这次保留了逐次结果，选择性对无记忆 p 为 0.0005，完整历史对无记忆 0.008，都过了 0.0167 的门槛；选择性对完整历史 p 为 0.125，不显著。作者强调，这不是说两者一样：差距是三十三个百分点，在三个数据集上方向一致，只是四个不一致配对不足以确立；按百分之三十三的失败率，每个条件约需 21 次试验。因此“结构化记忆更好”的主张，落在明确的成本差异上。</p>
+<p class="rd">零 token 刷新单独评估，作者承认此前把它和记忆混在一起，导致原来的表无法解读。在 12 次选择性试验中全部触发，不调模型，中位 0.08 秒。但 V2 按构造保留所有列，兼容检查必然通过，所以这只证明机制能执行，不代表真实更新的兼容比例。另外，表二的 140 秒是受控比较的代价：实验中刷新后还会再生成一次，实际部署则停在 0.08 秒的刷新。</p>
+<h3 class="rd" id="S6_SS4">6.4　实验三：token 效率<span class="nr">Experiment 3: Token Efficiency · <a href="https://arxiv.org/html/2607.09493v2#S6.SS4" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">比较三种数据表示：原样注入、截断到前 50 行、统计摘要。</p>
+<p class="rd note">【表三说明】表三按规模列出原始、截断、摘要的 token。不到一千行：3.2K、1.8K、0.4K；一千到一万行：28.5K、1.9K、0.5K；超过一万行：142.3K、2.0K、0.6K；企业均值：48.7K、1.9K、0.5K；公开均值：789.1K、4.4K、1.8K。行数跨三个数量级，摘要始终约 0.5K；但 44 列的 NYC 311 摘要要 4.5K。相对原始注入节省 97 倍和 431 倍，相对截断只有 2 到 3 倍。<span class="nr"> <a href="https://arxiv.org/html/2607.09493v2#S6.T3" target="_blank" rel="noopener">原文对应位置 ↗</a></span></p>
+<p class="rd">第二版在这里做了更正：初版声称摘要总在 1K token 以内，重跑公开数据后发现这只对行数成立。UCI Adult 有 32,561 行，摘要仅 922 token；按列数 4、15、24、44 排序，摘要为 339、922、1,584、4,486 token，单调上升。1,000 行的 Superstore 摘要比 UCI Adult 还大。原数据集都不超过 15 列，所以之前没测到。结论：摘要让成本与表长脱钩，而表长正是每次刷新会变的维度；但对表宽仍是线性的，宽表会吃紧。</p>
+<p class="rd">作者认为真正该比的是截断：只省 2 到 3 倍，企业从 1.9K 到 0.5K，公开从 4.4K 到 1.8K，最宽表上只有 2.05 倍。摘要的价值主要在保真：只取前 50 行会丢掉尾部分布和稀有类别，导致 24 个企业任务中 5 个出错。</p>
+<h3 class="rd" id="S6_SS5">6.5　实验四：用户研究<span class="nr">Experiment 4: User Study · <a href="https://arxiv.org/html/2607.09493v2#S6.SS5" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">十二人，六名工程师、六名分析师，四个顺序平衡的任务。周期性生成快 14 倍，12 秒对 165 秒，走的是零 token 刷新路径；表一的约 4.2 倍是两条路径的平均。细化快 2.5 倍，带约束生成快 3 倍。Likert 各维度都偏向选择性记忆，“愿意再次使用”差距最大，七分制下 6.5 对 4.2。平均每个 session 用回退 1.8 次。</p>
+<h3 class="rd" id="S6_SS6">6.6　发现汇总<span class="nr">Summary of Findings · <a href="https://arxiv.org/html/2607.09493v2#S6.SS6" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">本节只指向附录 B 的表四，放到最后一并讲。</p>
+<h2 class="rd" id="S7">第七节　讨论与结论<span class="nr">Discussion and Conclusion · <a href="https://arxiv.org/html/2607.09493v2#S7" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">两次消融对完整历史的评价看似矛盾：企业任务上 17 对 19、输入 9 倍；公开数据上八对零、显著。作者用一个设计差异解释：企业实验里无记忆条件会重新说明，用 4.3 轮对 1.4 轮，说全了就不需要记忆，所以记忆换来的是轮数而非完成率；公开实验扣下规格，不带就失败。要点是：用户愿意把话说全时，记忆不提升 agent 的能力，只省掉重说。完整历史也能提供上下文，但成本翻倍，十二次里有四次无法解释的失败。作者主张这种拆分适用于任何从结构化数据生成产出物的 workspace。</p>
+<p class="rd">证据分量上，企业结果过不了多重比较校正，只能促成一次功效足够的复现；公开复现更强。两项效率结果是架构性的：零 token 刷新免去模型调用，用户研究中该路径快 14 倍；摘要式生成在需要调用时省 97 到 431 倍 token。二者都是减少调用次数和成本，而非提升推理。git 版本和回退让用户掌控记忆生命周期。</p>
+<p class="rd">结论措辞是“suggest”：在企业场景中，提升 agentic LLM 效率的首要杠杆是上下文管理，而不是模型能力。</p>
+<p class="rd">导读者注：把全文压缩成一句话就是：记忆的价值不在“多”，而在“对”。对比开头的 Letta 文章，Letta 让同一个 agent 的所有对话自动共享经历，Apple 这篇则主张由用户撰写、按类别筛选、可以交给同事复用的 workspace 记忆，并且明确把过程性的轨迹排除在外。两种思路并不冲突，前者更像个人助手的连续记忆，后者更像团队里可审计、可回滚的工作模板。</p>
+<h2 class="rd" id="Sx1">局限性<span class="nr">Limitations · <a href="https://arxiv.org/html/2607.09493v2#Sx1" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">架构层面六点：四类拆分靠人工设计，自动识别可复用上下文仍是开放问题；零 token 架构只适用于 schema 稳定的表格数据，流式、非结构化或实时 API 数据需要更强的兼容检查；各连接器的故障如超时、认证过期、schema 漂移各自处理，没有统一重试；评分不涉及美观和信息层次；用户研究仅十二人，不足以对单个 Likert 题做检验；共享只到 workspace 粒度，不能单独分享工具配置之类的组件。</p>
+<h3 class="rd" id="Sx1_SS0_SSS0_Px1">证据层面的局限<span class="nr">Evidence · <a href="https://arxiv.org/html/2607.09493v2#Sx1.SS0.SSS0.Px1" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<ul class="l">
+<li class="rd">每格只跑一次，无重复种子；企业任务的差异都过不了校正。</li>
+<li class="rd">缺三条基线：摘要化历史、手写说明文件（实践者最可能的对照）、逐项去掉一类记忆的消融。</li>
+<li class="rd">完整历史有混杂：差在信息内容，也差在写得好不好。</li>
+<li class="rd">只用一个模型家族，没与 MemGPT、A-MEM、Mem0 或 RAG 正面比较。</li>
+<li class="rd">公开样本功效不足，十二对八约需每条件 21 次；兼容率百分之百是构造出来的，不是测出来的。</li>
+<li class="rd">任务和评分标准都出自作者，由第三方出题的复现会更有说服力。</li>
+</ul>
+<h3 class="rd" id="Sx1_SS0_SSS0_Px2">未来工作<span class="nr">Future Work · <a href="https://arxiv.org/html/2607.09493v2#Sx1.SS0.SSS0.Px2" target="_blank" rel="noopener">原文 ↗</a></span></h3>
+<p class="rd">首要是补上述评估：功效足够、配对、多次运行，加入摘要化历史和手写说明文件基线，以及四类记忆的逐项消融。架构上三个方向：用针对 session 轨迹的分类器学习该存什么；让近期没被验证的规格逐渐衰减，这是参与者提出的；agent 级记忆，保存有效的工具序列和出错恢复经验。作者强调它与 workspace 记忆性质不同，是学来的、agent 私有的，需要泛化边界、过期检测和与显式规格冲突时的裁决规则。此外还想支持流式和事件驱动的刷新。</p>
+<h2 class="rd" id="Sx2">伦理考量<span class="nr">Ethical Considerations · <a href="https://arxiv.org/html/2607.09493v2#Sx2" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">作者声明系统不存储、不处理个人可识别信息：记忆都在 workspace 层面，评估数据都是汇总的运营指标，个性化不涉及个人画像或行为追踪。安全方面，SQL 凭据、REST 的 API token、MCP 的 mTLS 都限定在单个 workspace，不跨 workspace 泄露；文件访问限于用户 session 目录，产出物在沙箱浏览器环境运行。产出物只经注入点拿数据，不持有连接器句柄或凭据，连接器调用由后端按所属 workspace 解析，未挂载的连接器会被拒绝。</p>
+<h2 class="rd" id="Sx3">致谢<span class="nr">Acknowledgements · <a href="https://arxiv.org/html/2607.09493v2#Sx3" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">作者说明写作中用 Claude 协助起草、编辑和 LaTeX 排版，而设计、实现、实验与分析均由作者完成，作者对全部内容负责。</p>
+<h2 class="rd" id="A1">附录 A　记忆组装示例<span class="nr">Appendix A: Memory Composition Example · <a href="https://arxiv.org/html/2607.09493v2#A1" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">附录 A 给出一份完整的组装示例，这里只讲结构。system prompt 分四块：基础 prompt，约 500 token，核心是零 token 刷新规则，即运行时动态解析数据、所有计算和洞察文字都在运行时完成、数值防 NaN 并回退为零、各连接器数据一视同仁；任务规格，作为“附加说明”，示例有四种环节配色、KPI 摘要卡、深色主题、百分比一位小数、达成率百分之九十五以上绿色、百分之八十以下红色；工具配置，示例是提交 bug 和搜索知识库两个工具，都通过 Bash 发 HTTP 请求调用；输出约束，只从注入点读数据、不嵌入数值、输出小于 50KB、用 JS 函数渲染而不是逐行写重复标记。用户消息里是查询加数据 schema，示例是一份 450 行、28 列的周度运营 CSV，附列名、12 个数值列统计、类别取值和样例行。</p>
+<p class="rd note">【代码说明】原文此处是示例 prompt 全文，属于代码，略过不读。<span class="nr"> <a href="https://arxiv.org/html/2607.09493v2#A1" target="_blank" rel="noopener">原文对应位置 ↗</a></span></p>
+<h2 class="rd" id="A2">附录 B　补充表格与图<span class="nr">Appendix B: Supplementary Tables and Figures · <a href="https://arxiv.org/html/2607.09493v2#A2" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd note">【表四说明】表四只列实测效果。规格记忆：公开数据十二对零，p 为 0.0005，输入成本相同；企业任务轮数少约 3 倍。选择性对完整历史：输入减半，3.9K 对 7.7K；完成十二对八，在 n 为 12 时不显著。零 token 刷新：十二次全部成功，零 token，中位 0.08 秒。摘要式生成：比原始注入省 97 到 431 倍，比截断省 2 到 3 倍。表注强调，git 版本回退和跨用户 workspace 转交虽已实现，但没有任何实验评估过，也没有改变共享人数，所以不算发现；企业任务差异不显著，也未列入。<span class="nr"> <a href="https://arxiv.org/html/2607.09493v2#A2.T4" target="_blank" rel="noopener">原文对应位置 ↗</a></span></p>
+<p class="rd note">【图二说明】图二用对数坐标展示四个公开数据集上三种方式的 token 开销，按列数 4、15、24、44 排列：原始注入跟随整表大小，摘要只随宽度上升，对行数不敏感。结论同正文，摘要与表长脱钩，但没有与表宽脱钩。<span class="nr"> <a href="https://arxiv.org/html/2607.09493v2#A2.F2" target="_blank" rel="noopener">原文对应位置 ↗</a></span></p>
+<p class="meta">中文导读，非翻译；仅供个人学习交流。原文：<a href="https://arxiv.org/html/2607.09493v2">Shared Selective Persistent Memory for Agentic LLM Systems</a>（arXiv 非独占分发许可（arXiv.org perpetual, non-exclusive license 1.0）；未授予翻译或改编权）。<a href="../index.html">← 返回文库目录</a></p>
+</main><div id="tocp"><div class="in"><b>目录</b><ol id="toc2"><li><a href="#abstract1">摘要：先抓住三个结论</a></li><li><a href="#S1">第一节　引言：无状态为什么是浪费</a><ol><li><a href="#S1_SS1">1.1　三个驱动场景</a></li></ol></li><li><a href="#S2">第二节　相关工作：本文的位置</a><ol><li><a href="#S2_SS0_SSS0_Px1">LLM 系统中的记忆</a></li><li><a href="#S2_SS0_SSS0_Px2">结构化记忆与上下文压缩</a></li><li><a href="#S2_SS0_SSS0_Px3">Agentic LLM 框架</a></li><li><a href="#S2_SS0_SSS0_Px4">工具增强的 LLM</a></li></ol></li><li><a href="#S3">第三节　架构本体</a><ol><li><a href="#S3_SS1">3.1　问题形式化</a></li><li><a href="#S3_SS2">3.2　四类记忆</a></li><li><a href="#S3_SS3">3.3　选择性遗忘</a></li><li><a href="#S3_SS4">3.4　session 开始时的组装</a></li><li><a href="#S3_SS5">3.5　零 token 数据刷新</a></li></ol></li><li><a href="#S4">第四节　协作式记忆共享</a></li><li><a href="#S5">第五节　实现</a><ol><li><a href="#S5_SS0_SSS0_Px1">Agent 循环</a></li><li><a href="#S5_SS0_SSS0_Px2">数据集成</a></li><li><a href="#S5_SS0_SSS0_Px3">持久化与版本管理</a></li><li><a href="#S5_SS0_SSS0_Px4">保存与回退</a></li></ol></li><li><a href="#S6">第六节　评估</a><ol><li><a href="#S6_SS1">6.1　实验设置</a></li><li><a href="#S6_SS2">6.2　实验一：记忆条件消融</a></li><li><a href="#S6_SS3">6.3　实验二：公开数据集复现</a></li><li><a href="#S6_SS4">6.4　实验三：token 效率</a></li><li><a href="#S6_SS5">6.5　实验四：用户研究</a></li><li><a href="#S6_SS6">6.6　发现汇总</a></li></ol></li><li><a href="#S7">第七节　讨论与结论</a></li><li><a href="#Sx1">局限性</a><ol><li><a href="#Sx1_SS0_SSS0_Px1">证据层面的局限</a></li><li><a href="#Sx1_SS0_SSS0_Px2">未来工作</a></li></ol></li><li><a href="#Sx2">伦理考量</a></li><li><a href="#Sx3">致谢</a></li><li><a href="#A1">附录 A　记忆组装示例</a></li><li><a href="#A2">附录 B　补充表格与图</a></li></ol><p><a href="../index.html">← 文库目录</a></p></div></div>
+<audio id="aud" preload="none" playsinline></audio><div id="fab"><div id="chap"></div><div id="mini"><button id="bp" aria-label="上一节">⏮</button><button id="bb" aria-label="后退15秒">↺15</button><button id="bf" aria-label="前进15秒">15↻</button><button id="bn" aria-label="下一节">⏭</button><button id="rate" aria-label="语速">1×</button><button id="bc" aria-label="章节列表">章节</button></div><div id="st" class="stl"></div>
+<button id="tg" aria-label="展开控制">⋯</button><button id="bplay" aria-label="播放">▶</button>
+<svg id="ring" viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-dasharray="40 110" stroke-linecap="round"/></svg></div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},R=document.documentElement,LS=window.localStorage||{getItem:function(){},setItem:function(){}};
+function g(k){try{return LS.getItem(k)}catch(e){return null}}function s(k,v){try{LS.setItem(k,v)}catch(e){}}
+var fs=+g('mp_fs')||17.5;function setFs(){R.style.setProperty('--fs',fs+'px');s('mp_fs',fs)}setFs();
+$('am').onclick=function(){fs=Math.max(14,fs-1);setFs()};$('ap').onclick=function(){fs=Math.min(26,fs+1);setFs()};
+var t=g('mp_th');if(t)R.dataset.theme=t;
+$('th').onclick=function(){var d=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');R.dataset.theme=d=='dark'?'light':'dark';s('mp_th',R.dataset.theme)};
+function prog(){var h=document.body.scrollHeight-innerHeight;$('prog').style.width=(h>0?scrollY/h*100:0)+'%'}addEventListener('scroll',prog,{passive:true});prog();
+function split(txt){var out=[],parts=txt.match(/[^。！？；!?;]+[。！？；!?;]*/g)||[txt],b='';
+ parts.forEach(function(p){while(p.length>180){var k=p.lastIndexOf('，',180);if(k<40)k=180;out.push((b+p.slice(0,k+1)));b='';p=p.slice(k+1)}
+ if((b+p).length>180){if(b)out.push(b);b=p}else b+=p});if(b.trim())out.push(b);return out.filter(function(x){return x.trim()})}
+var KP="mp_apple-shared-memory_";var TR=[{"u":"audio/s00-4eefe8.mp3","t":"摘要：先抓住三个结论","p0":0,"p1":9,"d":175.1,"s":[0.8,7.98,30.35,33.53,50.38,75.55,78.56,107.73,133.06,157.13]},{"u":"audio/s01-4241fc.mp3","t":"第一节 引言：无状态为什么是浪费","p0":9,"p1":25,"d":215.3,"s":[0.8,5.42,32.99,60.08,69.25,79.78,87.19,93.4,101.93,114.54,135.31,164.98,168.72,171.25,187.3,200.07]},{"u":"audio/s02-b7d5df.mp3","t":"第二节 相关工作：本文的位置","p0":25,"p1":35,"d":132.3,"s":[0.8,4.46,11.97,14.83,39.38,42.64,67.43,76.38,80.12,105.23,108.01]},{"u":"audio/s03-3d1096.mp3","t":"第三节 架构本体","p0":35,"p1":52,"d":249.8,"s":[0.8,3.74,27.13,47.92,51.42,76.21,80.19,96.32,125.97,142.5,154.65,158.07,182.68,193.47,197.45,217.2,220.54]},{"u":"audio/s04-b6bff7.mp3","t":"第四节 协作式记忆共享","p0":52,"p1":56,"d":63.1,"s":[0.8,4.38,21.31,47.52]},{"u":"audio/s05-7d4760.mp3","t":"第五节 实现","p0":56,"p1":66,"d":99.1,"s":[0.8,3.02,12.29,14.59,35.3,37.12,61.35,63.81,84.36,86.18]},{"u":"audio/s06-7e3240.mp3","t":"第六节 评估","p0":66,"p1":101,"d":775.0,"s":[0.8,3.34,10.91,40.34,43.76,70.05,83.86,106.41,111.11,124.52,150.55,189.16,211.53,232.62,265.65,272.66,302.33,307.11,333.72,352.97,385.28,404.67,447.92,461.89,479.78,494.87,526.3,534.99,565.94,570.71,602.7,606.6,613.03,647.42,659.15,690.66,705.75,728.86,733.0,766.19,769.05]},{"u":"audio/s07-c7c106.mp3","t":"第七节 讨论与结论","p0":101,"p1":106,"d":126.2,"s":[0.8,3.82,37.09,51.46,81.83,92.44,115.15]},{"u":"audio/s08-8cc2f4.mp3","t":"局限性","p0":106,"p1":117,"d":135.9,"s":[0.8,2.46,36.37,42.2,44.42,50.79,59.8,64.97,73.42,82.67,89.38,91.12,118.47]},{"u":"audio/s09-2d05f6.mp3","t":"伦理考量","p0":117,"p1":119,"d":48.8,"s":[0.8,2.7,34.69]},{"u":"audio/s10-a9a7d2.mp3","t":"致谢","p0":119,"p1":121,"d":17.0,"s":[0.8,2.62]},{"u":"audio/s11-c36da9.mp3","t":"附录 A 记忆组装示例","p0":121,"p1":124,"d":78.7,"s":[0.8,3.74,27.01,59.4,71.75]},{"u":"audio/s12-348733.mp3","t":"附录 B 补充表格与图","p0":124,"p1":127,"d":84.9,"s":[0.8,4.36,35.15,56.94]}];var P=[].slice.call(document.querySelectorAll('.rd')),C=P.map(function(p){var c=p.cloneNode(true);[].forEach.call(c.querySelectorAll('sup,.nr'),function(x){x.remove()});return split(c.textContent.replace(/\s+/g,' ').trim())});
+var MAP=TR.map(function(t){var m=[];for(var p=t.p0;p<t.p1;p++)for(var c=0;c<C[p].length;c++)m.push(p);return m});
+var A=$('aud'),ti=+g(KP+'tr')||0,cur=-1,pend=null,RATES=[0.75,1,1.25,1.5,1.75,2],rate=+g('mp_rate')||1,lastSave=0,lastPos=0;
+if(ti>=TR.length)ti=0;var savedT=+g(KP+'tm')||0;
+function fmt(x){x=Math.max(0,Math.floor(x||0));var h=Math.floor(x/3600),m=Math.floor(x%3600/60),s2=x%60;return (h?h+':'+(m<10?'0':''):'')+m+':'+(s2<10?'0':'')+s2}
+function setRate(){$('rate').textContent=rate+'×';A.playbackRate=rate;A.defaultPlaybackRate=rate;s('mp_rate',rate);pos()}
+$('rate').onclick=function(){rate=RATES[(RATES.indexOf(rate)+1)%RATES.length];setRate()};
+$('tg').onclick=function(){var o=$('mini').classList.toggle('open');this.textContent=o?'×':'⋯';if(!o)$('chap').classList.remove('open')};
+function st(x){$('st').textContent=x}function busy(b){$('ring').classList.toggle('on',b)}
+function icon(){var pl=!A.paused;$('bplay').textContent=pl?'⏸':'▶';$('bplay').setAttribute('aria-label',pl?'暂停':'播放')}
+function mark(p,scroll){if(p===cur)return;if(P[cur])P[cur].classList.remove('on');cur=p;var e=P[p];if(!e)return;e.classList.add('on');
+ if(scroll&&!document.hidden){var rc=e.getBoundingClientRect();if(rc.top<60||rc.bottom>innerHeight-80)e.scrollIntoView({behavior:'smooth',block:'center'})}}
+function chunkAt(t){var S=TR[ti].s,lo=0,hi=S.length-1;while(lo<hi){var m=(lo+hi+1)>>1;if(S[m]<=t+0.05)lo=m;else hi=m-1}return lo}
+function meta(){if(!('mediaSession' in navigator))return;try{navigator.mediaSession.metadata=new MediaMetadata({title:TR[ti].t,artist:"Pedada 等 · 中文导读",album:"Shared Selective Persistent Memory 导读"+'（'+(ti+1)+'/'+TR.length+'）',artwork:[{src:new URL('cover.png',location.href).href,sizes:'512x512',type:'image/png'}]})}catch(e){}}
+function pos(){if(!('mediaSession' in navigator)||!navigator.mediaSession.setPositionState||!isFinite(A.duration))return;try{navigator.mediaSession.setPositionState({duration:A.duration,playbackRate:A.playbackRate||1,position:Math.min(A.currentTime,A.duration)})}catch(e){}}
+function chapUI(){[].forEach.call($('chap').children,function(b,i){b.classList.toggle('cur',i===ti)})}
+function load(i,t,play){ti=i;pend=t||0;A.src=TR[i].u;A.playbackRate=rate;meta();chapUI();s(KP+'tr',ti);s(KP+'tm',pend);if(play){busy(true);var pr=A.play();if(pr&&pr.catch)pr.catch(function(e){busy(false);icon();if(e&&e.name=='NotAllowedError')st('点 ▶ 开始播放')})}
+ else{var m=MAP[i],k=chunkAt(pend);if(m[k]!=null)mark(m[k],false)}}
+function apply(){if(pend!=null&&isFinite(A.duration)){var t=pend;pend=null;if(t>0&&t<A.duration)A.currentTime=t}}
+A.addEventListener('loadedmetadata',function(){apply();A.playbackRate=rate;pos()});
+A.addEventListener('canplay',apply);
+A.addEventListener('play',function(){A.playbackRate=rate;icon()});A.addEventListener('playing',function(){busy(false);icon();pos()});
+A.addEventListener('pause',function(){icon();s(KP+'tm',A.currentTime);if(!A.ended)st('已暂停 · '+TR[ti].t)});
+A.addEventListener('waiting',function(){busy(true)});A.addEventListener('error',function(){busy(false);st('音频加载失败，请重试')});
+A.addEventListener('timeupdate',function(){if(pend!=null)return;var t=A.currentTime,m=MAP[ti],k=chunkAt(t);if(m[k]!=null)mark(m[k],true);
+ if(Math.abs(t-lastSave)>4){lastSave=t;s(KP+'tr',ti);s(KP+'tm',t)}
+ if(Math.abs(t-lastPos)>10){lastPos=t;pos()}
+ st((ti+1)+'/'+TR.length+' · '+fmt(t)+' / '+fmt(A.duration||TR[ti].d))});
+A.addEventListener('ended',function(){if(ti+1<TR.length)load(ti+1,0,true);else{s(KP+'tr',0);s(KP+'tm',0);st('已读完');icon()}});
+function seek(d){if(!A.src){load(ti,Math.max(0,savedT+d),false);return}A.currentTime=Math.max(0,Math.min((A.duration||1e9)-0.3,A.currentTime+d));pos()}
+function prevT(){if(A.src&&A.currentTime>8)A.currentTime=0;else if(ti>0)load(ti-1,0,!A.paused||!A.src);}
+function nextT(){if(ti+1<TR.length)load(ti+1,0,!A.paused||!A.src)}
+$('bp').onclick=prevT;$('bn').onclick=nextT;$('bb').onclick=function(){seek(-15)};$('bf').onclick=function(){seek(15)};
+$('bc').onclick=function(){$('chap').classList.toggle('open')};
+TR.forEach(function(t,i){var b=document.createElement('button');b.textContent=t.t+'  '+fmt(t.d);b.onclick=function(){load(i,0,true);$('chap').classList.remove('open')};$('chap').appendChild(b)});
+$('bplay').onclick=function(){if(A.src&&!A.paused){A.pause();return}if(!A.src){load(ti,savedT,true);return}busy(true);A.play().catch(function(){busy(false)})};
+if('mediaSession' in navigator){var H=[['play',function(){$('bplay').onclick()}],['pause',function(){A.pause()}],['previoustrack',prevT],['nexttrack',nextT],
+ ['seekbackward',function(d){seek(-((d&&d.seekOffset)||15))}],['seekforward',function(d){seek((d&&d.seekOffset)||15)}],['seekto',function(d){if(d&&d.seekTime!=null){A.currentTime=d.seekTime;pos()}}],['stop',function(){A.pause()}]];
+ H.forEach(function(h){try{navigator.mediaSession.setActionHandler(h[0],h[1])}catch(e){}})}
+function trackOf(p){for(var i=TR.length-1;i>=0;i--)if(p>=TR[i].p0)return i;return 0}
+P.forEach(function(p,i){p.addEventListener('click',function(e){if(e.target.closest('a')||getSelection().toString())return;var tr=trackOf(i),m=MAP[tr],k=m.indexOf(i);if(k<0)return;var t=TR[tr].s[k];
+ if(tr===ti&&A.src){A.currentTime=t;if(A.paused)A.play().catch(function(){})}else load(tr,t,true)})});
+setRate();meta();chapUI();(function(){var m=MAP[ti],k=0,S=TR[ti]&&TR[ti].s;if(S){while(k+1<S.length&&S[k+1]<=savedT)k++;if(m[k]!=null)mark(m[k],false)}})();
+st(savedT>0||ti>0?'上次：'+TR[ti].t+' '+fmt(savedT):TR.length+' 节 · 共 '+fmt(TR.reduce(function(a,t){return a+t.d},0)));
+$('tb').onclick=function(){$('tocp').classList.add('open')};$('tocp').onclick=function(e){if(e.target==this||e.target.closest('a'))this.classList.remove('open')};
+window.__t={split:split,P:P,C:C,TR:TR,MAP:MAP,A:A};
+})();
+</script></body></html>

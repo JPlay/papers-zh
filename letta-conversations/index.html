@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<link rel="icon" href="cover.png"><link rel="apple-touch-icon" href="cover.png"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Letta 博客导读：Conversations，让一个 agent 并发经历多段对话、共用一份记忆</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1f2328;--mut:#6a737d;--card:#fff;--bd:#e3e1dc;--ac:#c2410c;--hl:#fff3c4;--fs:17.5px}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#15171a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1e2125;--bd:#33373d;--ac:#fb923c;--hl:#3a3320}}
+:root[data-theme=dark]{--bg:#15171a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1e2125;--bd:#33373d;--ac:#fb923c;--hl:#3a3320}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:var(--fs)/1.8 -apple-system,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px 18px 90px}
+#prog{position:fixed;top:0;left:0;height:3px;background:var(--ac);width:0;z-index:20}
+.bar{position:sticky;top:0;z-index:10;display:flex;gap:6px;justify-content:flex-end;padding:8px 0;background:var(--bg)}
+button{font:inherit;font-size:15px;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 18px;margin:12px 0}
+h1{font-size:1.35em;line-height:1.4;margin:0 0 4px}.orig{color:var(--mut);font-size:.88em;margin:0 0 10px}
+.meta{font-size:.85em;color:var(--mut)}a{color:var(--ac)}
+h2{font-size:1.15em;margin:1.6em 0 .4em;border-left:4px solid var(--ac);padding-left:10px}
+p,li,h2,h3,h4{overflow-wrap:anywhere}p{margin:.6em 0}.rd{cursor:pointer;border-radius:6px;transition:background .2s}
+.rd.on{background:var(--hl);outline:2px solid var(--hl)}
+details summary{cursor:pointer;font-weight:600}details ol{padding-left:1.2em;font-size:.92em}
+.box h3{margin:.2em 0;font-size:1em}.box ul{padding-left:1.2em;margin:.3em 0}
+#fab{position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;width:44px;height:44px}
+#fab #bplay{width:44px;height:44px;border-radius:50%;padding:0;font-size:17px;background:rgba(127,127,127,.28);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(127,127,127,.35);color:var(--fg);position:relative;z-index:2}
+#ring{position:absolute;inset:-3px;width:50px;height:50px;pointer-events:none;z-index:3;display:none}#ring.on{display:block;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#tg{position:absolute;left:-22px;top:12px;width:20px;height:20px;padding:0;border-radius:50%;font-size:10px;line-height:18px;background:rgba(127,127,127,.22);border:none;color:var(--fg)}
+#mini{position:absolute;right:0;bottom:52px;display:none;gap:4px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:5px;box-shadow:0 2px 10px rgba(0,0,0,.15);white-space:nowrap}
+#mini.open{display:flex}#mini button{font-size:13px;padding:4px 7px}#st{position:absolute;right:52px;bottom:12px;font-size:11px;color:var(--mut);white-space:nowrap;background:var(--bg);opacity:.85;border-radius:6px;padding:1px 5px;pointer-events:none}#mini.open~#st{bottom:92px}
+#chap{position:absolute;right:0;bottom:96px;display:none;flex-direction:column;gap:3px;max-height:60vh;overflow-y:auto;width:min(82vw,330px);background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px;box-shadow:0 2px 12px rgba(0,0,0,.2)}#chap.open{display:flex}#chap button{text-align:left;font-size:13.5px;padding:7px 9px;border:none;white-space:normal}#chap button.cur{color:var(--ac);font-weight:700;background:rgba(127,127,127,.12)}
+h3{font-size:1.05em;margin:1.3em 0 .3em}h4{font-size:1em;margin:1em 0 .2em}.h5{font-weight:700}
+h2 .n,h3 .n,h4 .n{color:var(--ac);margin-right:.35em}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:rgba(127,127,127,.13);border-radius:4px;padding:0 .25em;word-break:break-all}
+pre{max-width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;overflow-x:auto;font-size:12.5px;line-height:1.55;margin:.4em 0}pre code{background:none;padding:0;font-size:inherit;word-break:normal;white-space:pre}
+sup{font-size:.68em;line-height:0}sup a{text-decoration:none}.cite{color:var(--mut)}
+ul.l{padding-left:1.3em;margin:.4em 0}ul.l li{margin:.3em 0}
+figure{max-width:100%;min-width:0;overflow:hidden;margin:1em 0;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+figcaption{font-size:.9em;margin:.2em 0 .5em}figcaption b{color:var(--ac)}
+.tw{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;font-size:12.5px;line-height:1.45;min-width:100%}
+th,td{border:1px solid var(--bd);padding:4px 6px;vertical-align:top;text-align:left}th{background:rgba(127,127,127,.12);font-weight:600}
+.svg svg{width:100%;height:auto;background:#fff;border-radius:6px}
+.fnl{font-size:.86em;color:var(--mut);border-top:1px dashed var(--bd);margin-top:.8em;padding-top:.3em}.fnl p{margin:.3em 0}
+.nr{font-size:.8em;color:var(--mut)}
+#toc ol{padding-left:1.1em;margin:.3em 0}#toc li{margin:.15em 0}#toc ol ol{font-size:.92em}#toc a{text-decoration:none}
+#tocp{position:fixed;inset:0;z-index:40;display:none;background:rgba(0,0,0,.35)}#tocp.open{display:block}
+#tocp .in{position:absolute;top:0;bottom:0;left:0;width:min(86vw,380px);overflow-y:auto;background:var(--bg);padding:14px 16px 40px;border-right:1px solid var(--bd)}
+.bib li{margin:.25em 0;word-break:break-all}
+.back{display:inline-block;font-size:.9em;text-decoration:none;margin:2px 0 4px}.note{background:rgba(127,127,127,.08);border-left:3px solid var(--bd);padding:6px 10px}h2 .nr,h3 .nr{font-weight:400;margin-left:.4em}
+.att{font-size:.82em;color:var(--mut);background:rgba(127,127,127,.08);border-radius:8px;padding:8px 10px;margin-top:10px}
+</style></head><body>
+<div id="prog"></div><main>
+<div class="bar"><a class="back" href="../index.html" style="margin-right:auto">← 文库目录</a><button id="tb" aria-label="目录">☰ 目录</button><button id="am" aria-label="缩小字号">A-</button><button id="ap" aria-label="放大字号">A+</button><button id="th" aria-label="切换主题">◐</button></div><div class="card"><h1 class="rd">Letta 博客导读：Conversations，让一个 agent 并发经历多段对话、共用一份记忆</h1><p class="orig">原题：Conversations: Shared Agent Memory Across Concurrent Experiences</p><div class="meta">作者/机构：Letta（官方博客，作者署名为组织）<br>发布日期：2026-01-21 · 来源：Letta Research Blog<br>原文链接：<a href="https://www.letta.com/blog/conversations/">https://www.letta.com/blog/conversations/</a><br>版权/许可：© 2026 Letta，保留所有权利（all rights reserved）；未获翻译授权</div><div class="att"><b>中文导读，非翻译；仅供个人学习交流。</b>本页由 JPlay Wang 的助理（Grok Bot）用中文自行组织撰写，按原文章节顺序梳理其论点、方法、数据与局限，只在必要处引用极短的英文原句并以引号标出；不构成原文的翻译或逐句改写，表格与代码以文字说明代替，内容以英文原文为准。版权归原作者/机构所有，请勿公开传播。专有名词与技术术语保留英文。</div></div><details class="card" id="dl"><summary>🎧 离线收听 / 下载音频（5 节，共 3:03）</summary><p style="margin:.5em 0"><a href="letta-conversations.mp3" download><b>下载整篇音频（单个 MP3，1.0 MB）</b></a></p><p class="meta" style="margin:.3em 0">可导入任意音乐/播客 App 离线播放；下面是逐节音轨。</p><ol style="font-size:.9em;padding-left:1.3em"><li><a href="audio/s00-b932aa.mp3" download>开篇：从“一条时间线”到并行的经历</a> <span class="meta">1:30 · 0.5 MB</span></li><li><a href="audio/s01-d8120d.mp3" download>在 ADE 里：从主对话分出旁支</a> <span class="meta">0:21 · 0.1 MB</span></li><li><a href="audio/s02-8cbef9.mp3" download>在 Letta Code 里：多个并发 session</a> <span class="meta">0:19 · 0.1 MB</span></li><li><a href="audio/s03-086365.mp3" download>设计取舍：共享还是隔离</a> <span class="meta">0:34 · 0.2 MB</span></li><li><a href="audio/s04-f55ed1.mp3" download>结语</a> <span class="meta">0:19 · 0.1 MB</span></li></ol></details><details class="card" id="toc" open><summary>目录</summary><ol><li><a href="#top">开篇：从“一条时间线”到并行的经历</a></li><li><a href="#conversations-in-the-ade">在 ADE 里：从主对话分出旁支</a></li><li><a href="#concurrent-sessions-in-letta-code">在 Letta Code 里：多个并发 session</a></li><li><a href="#designing-agents-with-conversations">设计取舍：共享还是隔离</a></li><li><a href="#conclusion">结语</a></li></ol></details>
+<p class="rd">这是 Letta 博客文章《Conversations: Shared Agent Memory Across Concurrent Experiences》的中文导读，不是翻译，仅供个人学习交流。它很短，作为引子：它和后面的 Apple 论文都在讨论，记忆怎样跨多个 session 保留和共享。</p>
+<h2 class="rd" id="top">开篇：从“一条时间线”到并行的经历<span class="nr">(opening) · <a href="https://www.letta.com/blog/conversations/" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">一句话概括：Letta 推出 conversations API endpoints，同一个 agent 可以同时进行多段对话，但身份和记忆仍然只有一份。</p>
+<p class="rd">背景是 Letta 对 agent 的定位：它要做的是 stateful agent，更像“digital humans”（原文用语），而不只是一个 LLM，有自我认同和经历，记忆从经历中形成。过去这种 agent 只有一条时间线；现在每段 conversation 都归属于某个具体 agent，在任何一段里形成的记忆都会流向它的所有对话。</p>
+<p class="rd">代表性场景是让一个 agent 当组织的知识管家（原文“institutional knowledge manager”）：Slack 等渠道里每个 thread 对应一段 conversation，几百个并行运转，都汇入同一份记忆；agent 能跨全部对话检索，把工程讨论、产品会议和客户反馈串起来。</p>
+<h2 class="rd" id="conversations-in-the-ade">在 ADE 里：从主对话分出旁支<span class="nr">Conversations in the ADE · <a href="https://www.letta.com/blog/conversations/#conversations-in-the-ade" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">在 ADE 中，可以从主对话，也就是 “default” conversation，另开独立的 “side” conversation。对面始终是同一个 agent，所以消息可以跨对话检索，记忆共享。</p>
+<h2 class="rd" id="concurrent-sessions-in-letta-code">在 Letta Code 里：多个并发 session<span class="nr">Concurrent Sessions in Letta Code · <a href="https://www.letta.com/blog/conversations/#concurrent-sessions-in-letta-code" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">Letta Code 底层已默认改用 Conversations API endpoints。效果是：对同一个 agent 可以同时开多个 session，彼此的记忆和经历是连通的。</p>
+<h2 class="rd" id="designing-agents-with-conversations">设计取舍：共享还是隔离<span class="nr">Designing Agents with Conversations · <a href="https://www.letta.com/blog/conversations/#designing-agents-with-conversations" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">服务大量终端用户时，不必再为每个用户建一个 agent。取舍标准只有一条：希望记忆跨用户 session 积累，就考虑 conversations；需要记忆隔离，仍应分别创建 agent。</p>
+<p class="rd">导读者注：Letta 的共享是 agent 层面、自动流通的；后面的 Apple 论文则只挑四类信息放进 workspace，再在角色权限控制下共享，两者正好对照。</p>
+<h2 class="rd" id="conclusion">结语<span class="nr">Conclusion · <a href="https://www.letta.com/blog/conversations/#conclusion" target="_blank" rel="noopener">原文 ↗</a></span></h2>
+<p class="rd">结尾只是指引：安装最新版 Letta Code 试用，或查看文档。原文发布于二零二六年一月二十一日，属于 PRODUCT 栏目的产品公告，没有给出性能数据或实验。</p>
+<p class="meta">中文导读，非翻译；仅供个人学习交流。原文：<a href="https://www.letta.com/blog/conversations/">Conversations: Shared Agent Memory Across Concurrent Experiences</a>（© 2026 Letta，保留所有权利（all rights reserved）；未获翻译授权）。<a href="../index.html">← 返回文库目录</a></p>
+</main><div id="tocp"><div class="in"><b>目录</b><ol id="toc2"><li><a href="#top">开篇：从“一条时间线”到并行的经历</a></li><li><a href="#conversations-in-the-ade">在 ADE 里：从主对话分出旁支</a></li><li><a href="#concurrent-sessions-in-letta-code">在 Letta Code 里：多个并发 session</a></li><li><a href="#designing-agents-with-conversations">设计取舍：共享还是隔离</a></li><li><a href="#conclusion">结语</a></li></ol><p><a href="../index.html">← 文库目录</a></p></div></div>
+<audio id="aud" preload="none" playsinline></audio><div id="fab"><div id="chap"></div><div id="mini"><button id="bp" aria-label="上一节">⏮</button><button id="bb" aria-label="后退15秒">↺15</button><button id="bf" aria-label="前进15秒">15↻</button><button id="bn" aria-label="下一节">⏭</button><button id="rate" aria-label="语速">1×</button><button id="bc" aria-label="章节列表">章节</button></div><div id="st" class="stl"></div>
+<button id="tg" aria-label="展开控制">⋯</button><button id="bplay" aria-label="播放">▶</button>
+<svg id="ring" viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-dasharray="40 110" stroke-linecap="round"/></svg></div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},R=document.documentElement,LS=window.localStorage||{getItem:function(){},setItem:function(){}};
+function g(k){try{return LS.getItem(k)}catch(e){return null}}function s(k,v){try{LS.setItem(k,v)}catch(e){}}
+var fs=+g('mp_fs')||17.5;function setFs(){R.style.setProperty('--fs',fs+'px');s('mp_fs',fs)}setFs();
+$('am').onclick=function(){fs=Math.max(14,fs-1);setFs()};$('ap').onclick=function(){fs=Math.min(26,fs+1);setFs()};
+var t=g('mp_th');if(t)R.dataset.theme=t;
+$('th').onclick=function(){var d=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');R.dataset.theme=d=='dark'?'light':'dark';s('mp_th',R.dataset.theme)};
+function prog(){var h=document.body.scrollHeight-innerHeight;$('prog').style.width=(h>0?scrollY/h*100:0)+'%'}addEventListener('scroll',prog,{passive:true});prog();
+function split(txt){var out=[],parts=txt.match(/[^。！？；!?;]+[。！？；!?;]*/g)||[txt],b='';
+ parts.forEach(function(p){while(p.length>180){var k=p.lastIndexOf('，',180);if(k<40)k=180;out.push((b+p.slice(0,k+1)));b='';p=p.slice(k+1)}
+ if((b+p).length>180){if(b)out.push(b);b=p}else b+=p});if(b.trim())out.push(b);return out.filter(function(x){return x.trim()})}
+var KP="mp_letta-conversations_";var TR=[{"u":"audio/s00-b932aa.mp3","t":"开篇：从“一条时间线”到并行的经历","p0":0,"p1":6,"d":90.5,"s":[0.8,8.7,31.15,35.37,46.7,69.39]},{"u":"audio/s01-d8120d.mp3","t":"在 ADE 里：从主对话分出旁支","p0":6,"p1":8,"d":20.7,"s":[0.8,5.26]},{"u":"audio/s02-8cbef9.mp3","t":"在 Letta Code 里：多个并发 session","p0":8,"p1":10,"d":18.6,"s":[0.8,4.06]},{"u":"audio/s03-086365.mp3","t":"设计取舍：共享还是隔离","p0":10,"p1":13,"d":34.0,"s":[0.8,4.62,18.91]},{"u":"audio/s04-f55ed1.mp3","t":"结语","p0":13,"p1":15,"d":19.2,"s":[0.8,2.46]}];var P=[].slice.call(document.querySelectorAll('.rd')),C=P.map(function(p){var c=p.cloneNode(true);[].forEach.call(c.querySelectorAll('sup,.nr'),function(x){x.remove()});return split(c.textContent.replace(/\s+/g,' ').trim())});
+var MAP=TR.map(function(t){var m=[];for(var p=t.p0;p<t.p1;p++)for(var c=0;c<C[p].length;c++)m.push(p);return m});
+var A=$('aud'),ti=+g(KP+'tr')||0,cur=-1,pend=null,RATES=[0.75,1,1.25,1.5,1.75,2],rate=+g('mp_rate')||1,lastSave=0,lastPos=0;
+if(ti>=TR.length)ti=0;var savedT=+g(KP+'tm')||0;
+function fmt(x){x=Math.max(0,Math.floor(x||0));var h=Math.floor(x/3600),m=Math.floor(x%3600/60),s2=x%60;return (h?h+':'+(m<10?'0':''):'')+m+':'+(s2<10?'0':'')+s2}
+function setRate(){$('rate').textContent=rate+'×';A.playbackRate=rate;A.defaultPlaybackRate=rate;s('mp_rate',rate);pos()}
+$('rate').onclick=function(){rate=RATES[(RATES.indexOf(rate)+1)%RATES.length];setRate()};
+$('tg').onclick=function(){var o=$('mini').classList.toggle('open');this.textContent=o?'×':'⋯';if(!o)$('chap').classList.remove('open')};
+function st(x){$('st').textContent=x}function busy(b){$('ring').classList.toggle('on',b)}
+function icon(){var pl=!A.paused;$('bplay').textContent=pl?'⏸':'▶';$('bplay').setAttribute('aria-label',pl?'暂停':'播放')}
+function mark(p,scroll){if(p===cur)return;if(P[cur])P[cur].classList.remove('on');cur=p;var e=P[p];if(!e)return;e.classList.add('on');
+ if(scroll&&!document.hidden){var rc=e.getBoundingClientRect();if(rc.top<60||rc.bottom>innerHeight-80)e.scrollIntoView({behavior:'smooth',block:'center'})}}
+function chunkAt(t){var S=TR[ti].s,lo=0,hi=S.length-1;while(lo<hi){var m=(lo+hi+1)>>1;if(S[m]<=t+0.05)lo=m;else hi=m-1}return lo}
+function meta(){if(!('mediaSession' in navigator))return;try{navigator.mediaSession.metadata=new MediaMetadata({title:TR[ti].t,artist:"Letta 博客 · 中文导读",album:"Letta Conversations 导读"+'（'+(ti+1)+'/'+TR.length+'）',artwork:[{src:new URL('cover.png',location.href).href,sizes:'512x512',type:'image/png'}]})}catch(e){}}
+function pos(){if(!('mediaSession' in navigator)||!navigator.mediaSession.setPositionState||!isFinite(A.duration))return;try{navigator.mediaSession.setPositionState({duration:A.duration,playbackRate:A.playbackRate||1,position:Math.min(A.currentTime,A.duration)})}catch(e){}}
+function chapUI(){[].forEach.call($('chap').children,function(b,i){b.classList.toggle('cur',i===ti)})}
+function load(i,t,play){ti=i;pend=t||0;A.src=TR[i].u;A.playbackRate=rate;meta();chapUI();s(KP+'tr',ti);s(KP+'tm',pend);if(play){busy(true);var pr=A.play();if(pr&&pr.catch)pr.catch(function(e){busy(false);icon();if(e&&e.name=='NotAllowedError')st('点 ▶ 开始播放')})}
+ else{var m=MAP[i],k=chunkAt(pend);if(m[k]!=null)mark(m[k],false)}}
+function apply(){if(pend!=null&&isFinite(A.duration)){var t=pend;pend=null;if(t>0&&t<A.duration)A.currentTime=t}}
+A.addEventListener('loadedmetadata',function(){apply();A.playbackRate=rate;pos()});
+A.addEventListener('canplay',apply);
+A.addEventListener('play',function(){A.playbackRate=rate;icon()});A.addEventListener('playing',function(){busy(false);icon();pos()});
+A.addEventListener('pause',function(){icon();s(KP+'tm',A.currentTime);if(!A.ended)st('已暂停 · '+TR[ti].t)});
+A.addEventListener('waiting',function(){busy(true)});A.addEventListener('error',function(){busy(false);st('音频加载失败，请重试')});
+A.addEventListener('timeupdate',function(){if(pend!=null)return;var t=A.currentTime,m=MAP[ti],k=chunkAt(t);if(m[k]!=null)mark(m[k],true);
+ if(Math.abs(t-lastSave)>4){lastSave=t;s(KP+'tr',ti);s(KP+'tm',t)}
+ if(Math.abs(t-lastPos)>10){lastPos=t;pos()}
+ st((ti+1)+'/'+TR.length+' · '+fmt(t)+' / '+fmt(A.duration||TR[ti].d))});
+A.addEventListener('ended',function(){if(ti+1<TR.length)load(ti+1,0,true);else{s(KP+'tr',0);s(KP+'tm',0);st('已读完');icon()}});
+function seek(d){if(!A.src){load(ti,Math.max(0,savedT+d),false);return}A.currentTime=Math.max(0,Math.min((A.duration||1e9)-0.3,A.currentTime+d));pos()}
+function prevT(){if(A.src&&A.currentTime>8)A.currentTime=0;else if(ti>0)load(ti-1,0,!A.paused||!A.src);}
+function nextT(){if(ti+1<TR.length)load(ti+1,0,!A.paused||!A.src)}
+$('bp').onclick=prevT;$('bn').onclick=nextT;$('bb').onclick=function(){seek(-15)};$('bf').onclick=function(){seek(15)};
+$('bc').onclick=function(){$('chap').classList.toggle('open')};
+TR.forEach(function(t,i){var b=document.createElement('button');b.textContent=t.t+'  '+fmt(t.d);b.onclick=function(){load(i,0,true);$('chap').classList.remove('open')};$('chap').appendChild(b)});
+$('bplay').onclick=function(){if(A.src&&!A.paused){A.pause();return}if(!A.src){load(ti,savedT,true);return}busy(true);A.play().catch(function(){busy(false)})};
+if('mediaSession' in navigator){var H=[['play',function(){$('bplay').onclick()}],['pause',function(){A.pause()}],['previoustrack',prevT],['nexttrack',nextT],
+ ['seekbackward',function(d){seek(-((d&&d.seekOffset)||15))}],['seekforward',function(d){seek((d&&d.seekOffset)||15)}],['seekto',function(d){if(d&&d.seekTime!=null){A.currentTime=d.seekTime;pos()}}],['stop',function(){A.pause()}]];
+ H.forEach(function(h){try{navigator.mediaSession.setActionHandler(h[0],h[1])}catch(e){}})}
+function trackOf(p){for(var i=TR.length-1;i>=0;i--)if(p>=TR[i].p0)return i;return 0}
+P.forEach(function(p,i){p.addEventListener('click',function(e){if(e.target.closest('a')||getSelection().toString())return;var tr=trackOf(i),m=MAP[tr],k=m.indexOf(i);if(k<0)return;var t=TR[tr].s[k];
+ if(tr===ti&&A.src){A.currentTime=t;if(A.paused)A.play().catch(function(){})}else load(tr,t,true)})});
+setRate();meta();chapUI();(function(){var m=MAP[ti],k=0,S=TR[ti]&&TR[ti].s;if(S){while(k+1<S.length&&S[k+1]<=savedT)k++;if(m[k]!=null)mark(m[k],false)}})();
+st(savedT>0||ti>0?'上次：'+TR[ti].t+' '+fmt(savedT):TR.length+' 节 · 共 '+fmt(TR.reduce(function(a,t){return a+t.d},0)));
+$('tb').onclick=function(){$('tocp').classList.add('open')};$('tocp').onclick=function(e){if(e.target==this||e.target.closest('a'))this.classList.remove('open')};
+window.__t={split:split,P:P,C:C,TR:TR,MAP:MAP,A:A};
+})();
+</script></body></html>
